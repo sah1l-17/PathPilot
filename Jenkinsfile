@@ -4,8 +4,7 @@ pipeline {
     environment {
         DOCKER_IMAGE = 'sahil069917/pathpilot:latest'
         // Will be populated from credentials
-        DOCKERHUB_USERNAME = credentials('dockerhub-credentials').split(':')[0]
-        DOCKERHUB_PASSWORD = credentials('dockerhub-credentials').split(':')[1]
+        DOCKER_UBERNAME = credentials('dockerhub-credentials')
     }
 
     stages {
@@ -23,6 +22,11 @@ pipeline {
 
         stage('Setup Environment') {
             steps {
+                script {
+                    // Split credentials in script block
+                    env.DOCKERHUB_USERNAME = env.DOCKER_UBERNAME.split(':')[0]
+                    env.DOCKERHUB_PASSWORD = env.DOCKER_UBERNAME.split(':')[1]
+                }
                 sh '''#!/bin/bash
                     # Install system dependencies
                     sudo apt-get update -y
@@ -58,11 +62,11 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 script {
-                    // Login to Docker Hub first
-                    sh "echo ${DOCKERHUB_PASSWORD} | docker login -u ${DOCKERHUB_USERNAME} --password-stdin"
+                    // Login to Docker Hub
+                    sh "echo ${env.DOCKERHUB_PASSWORD} | docker login -u ${env.DOCKERHUB_USERNAME} --password-stdin"
                     
                     // Build with cache and metadata
-                    dockerImage = docker.build("${DOCKERHUB_USERNAME}/pathpilot:latest", 
+                    dockerImage = docker.build("${env.DOCKERHUB_USERNAME}/pathpilot:latest", 
                         "--build-arg ENV=production .")
                 }
             }
@@ -89,14 +93,14 @@ pipeline {
                     docker stop pathpilot_container || true
                     docker rm pathpilot_container || true
                     
-                    # Run new container with proper resource limits
+                    # Run new container
                     docker run -d \
                         --name pathpilot_container \
                         -p 5000:5000 \
                         -e GROQ_API_KEY=${GROQ_API_KEY} \
                         --memory="1g" \
                         --cpus="1.0" \
-                        ${DOCKERHUB_USERNAME}/pathpilot:latest
+                        ${env.DOCKERHUB_USERNAME}/pathpilot:latest
                 '''
             }
         }
@@ -106,12 +110,6 @@ pipeline {
         always {
             sh 'docker logout'  // Clean up docker credentials
             cleanWs()  // Clean workspace
-        }
-        success {
-            slackSend(color: 'good', message: "Build Successful: ${env.BUILD_URL}")
-        }
-        failure {
-            slackSend(color: 'danger', message: "Build Failed: ${env.BUILD_URL}")
         }
     }
 }
