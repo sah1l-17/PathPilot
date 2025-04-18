@@ -3,7 +3,6 @@ pipeline {
     
     environment {
         DOCKER_IMAGE = 'sahil069917/pathpilot:latest'
-        DOCKERHUB = credentials('dockerhub-credentials')
     }
     
     stages {
@@ -16,11 +15,13 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 script {
-                    // Login to Docker Hub using the credentials
-                    sh "echo ${DOCKERHUB_PSW} | docker login -u ${DOCKERHUB_USR} --password-stdin"
-                    
-                    // Build the Docker image
-                    sh "docker build -t ${DOCKER_IMAGE} ."
+                    withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', usernameVariable: 'DOCKER_HUB_USR', passwordVariable: 'DOCKER_HUB_PSW')]) {
+                        // Login to Docker Hub using credentials
+                        sh "echo ${DOCKER_HUB_PSW} | docker login -u ${DOCKER_HUB_USR} --password-stdin"
+
+                        // Build the Docker image
+                        sh "docker build -t ${DOCKER_IMAGE} ."
+                    }
                 }
             }
         }
@@ -28,8 +29,11 @@ pipeline {
         stage('Push Docker Image') {
             steps {
                 script {
-                    // Push the image to Docker Hub
-                    sh "docker push ${DOCKER_IMAGE}"
+                    // Reuse credentials for push if necessary
+                    withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', usernameVariable: 'DOCKER_HUB_USR', passwordVariable: 'DOCKER_HUB_PSW')]) {
+                        sh "echo ${DOCKER_HUB_PSW} | docker login -u ${DOCKER_HUB_USR} --password-stdin"
+                        sh "docker push ${DOCKER_IMAGE}"
+                    }
                 }
             }
         }
@@ -40,11 +44,9 @@ pipeline {
             }
             steps {
                 script {
-                    // Stop and remove any existing container
                     sh "docker stop pathpilot_container || true"
                     sh "docker rm pathpilot_container || true"
                     
-                    // Run the container with proper environment variables
                     sh """
                         docker run -d --name pathpilot_container \
                         -p 5000:5000 \
@@ -57,7 +59,6 @@ pipeline {
             }
         }
         
-        // Add a cleanup stage instead of using post
         stage('Cleanup') {
             steps {
                 sh 'docker logout'
