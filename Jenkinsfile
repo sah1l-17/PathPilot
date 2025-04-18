@@ -3,7 +3,6 @@ pipeline {
     
     environment {
         DOCKER_IMAGE = 'sahil069917/pathpilot:latest'
-        // Define credentials once, properly
         DOCKERHUB = credentials('dockerhub-credentials')
     }
     
@@ -57,12 +56,13 @@ pipeline {
                 }
             }
         }
-    }
-    
-    post {
-        always {
-            sh 'docker logout'
-            cleanWs()
+        
+        // Add a cleanup stage instead of using post
+        stage('Cleanup') {
+            steps {
+                sh 'docker logout'
+                cleanWs()
+            }
         }
     }
 }
