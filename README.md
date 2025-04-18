@@ -33,5 +33,5 @@ PathPilot is an AI-powered career guidance web app built with Flask. Users can i
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/yourusername/PathPilot.git
+git clone https://github.com/sah1l-17/PathPilot.git
 cd PathPilot
