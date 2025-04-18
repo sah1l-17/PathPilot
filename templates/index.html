@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <title>PathPilot - AI Career Advisor</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 </head>
 <body>
     <div class="container">
@@ -23,8 +24,11 @@
         {% if advice %}
         <div class="results">
             <h2>Career Suggestions</h2>
-            <div class="advice-content">{{ advice }}</div>
+            <div class="advice-content" id="advice-content"></div>
         </div>
+        <script>
+            document.getElementById('advice-content').innerHTML = marked.parse({{ advice|safe }});
+        </script>
         {% endif %}
     </div>
 </body>
