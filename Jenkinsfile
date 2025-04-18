@@ -1,65 +1,68 @@
 pipeline {
     agent any
-
+    
     environment {
         DOCKER_IMAGE = 'sahil069917/pathpilot:latest'
-        DOCKER_UBERNAME = credentials('dockerhub-credentials')
+        // Define credentials once, properly
+        DOCKERHUB = credentials('dockerhub-credentials')
     }
-
+    
     stages {
         stage('Clone Repository') {
             steps {
-                checkout scm  // 👈 Simplified checkout
+                checkout scm
             }
         }
-
+        
         stage('Build Docker Image') {
             steps {
                 script {
-                    // Login to Docker Hub
-                    sh "echo ${env.DOCKERHUB_PASSWORD} | docker login -u ${env.DOCKERHUB_USERNAME} --password-stdin"
+                    // Login to Docker Hub using the credentials
+                    sh "echo ${DOCKERHUB_PSW} | docker login -u ${DOCKERHUB_USR} --password-stdin"
                     
-                    // Build with simplified syntax
-                    docker.build("${env.DOCKER_IMAGE}").inside("--network host") {
-                        // Optional: Run tests inside the container
-                    }
+                    // Build the Docker image
+                    sh "docker build -t ${DOCKER_IMAGE} ."
                 }
             }
         }
-
+        
         stage('Push Docker Image') {
             steps {
                 script {
-                    docker.withRegistry('https://registry.hub.docker.com', 'dockerhub-credentials') {
-                        docker.image("${env.DOCKER_IMAGE}").push()
-                        docker.image("${env.DOCKER_IMAGE}").push('latest')
-                    }
+                    // Push the image to Docker Hub
+                    sh "docker push ${DOCKER_IMAGE}"
                 }
             }
         }
-
+        
         stage('Run Docker Container') {
             environment {
                 GROQ_API_KEY = credentials('groq-api-key')
             }
             steps {
                 script {
-                    docker.image("${env.DOCKER_IMAGE}").run(
-                        "-d --name pathpilot_container " +
-                        "-p 5000:5000 " +
-                        "-e GROQ_API_KEY=${GROQ_API_KEY} " +
-                        "--memory='1g' " +
-                        "--cpus='1.0'"
-                    )
+                    // Stop and remove any existing container
+                    sh "docker stop pathpilot_container || true"
+                    sh "docker rm pathpilot_container || true"
+                    
+                    // Run the container with proper environment variables
+                    sh """
+                        docker run -d --name pathpilot_container \
+                        -p 5000:5000 \
+                        -e GROQ_API_KEY=${GROQ_API_KEY} \
+                        --memory='1g' \
+                        --cpus='1.0' \
+                        ${DOCKER_IMAGE}
+                    """
                 }
             }
         }
     }
-
+    
     post {
         always {
-            sh 'docker logout'  // Clean up docker credentials
-            cleanWs()  // Clean workspace
+            sh 'docker logout'
+            cleanWs()
         }
     }
 }
