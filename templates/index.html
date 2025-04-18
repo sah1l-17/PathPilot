@@ -27,7 +27,7 @@
             <div class="advice-content" id="advice-content"></div>
         </div>
         <script>
-            document.getElementById('advice-content').innerHTML = marked.parse({{ advice|safe }});
+            document.getElementById('advice-content').innerHTML = marked.parse(`{{ advice|safe }}`);
         </script>
         {% endif %}
     </div>
