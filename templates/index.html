@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>PathPilot - AI Career Advisor</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>PathPilot: Your Career Copilot</h1>
+        <form method="post">
+            <div class="input-group">
+                <label for="interests">What are your interests?</label>
+                <textarea id="interests" name="interests" required>{{ interests }}</textarea>
+            </div>
+            <div class="input-group">
+                <label for="skills">List your current skills</label>
+                <textarea id="skills" name="skills" required>{{ skills }}</textarea>
+            </div>
+            <button type="submit">Get Career Advice</button>
+        </form>
+
+        {% if advice %}
+        <div class="results">
+            <h2>Career Suggestions</h2>
+            <div class="advice-content">{{ advice }}</div>
+        </div>
+        {% endif %}
+    </div>
+</body>
+</html>
