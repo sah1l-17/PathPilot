@@ -8,9 +8,16 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                git ranch: 'main', url:'https://github.com/sah1l-17/PathPilot.git'
+                git branch: 'main', url:'https://github.com/sah1l-17/PathPilot.git'
             }
-        }
+        }docker run -d \
+  -p 8888:8080 \               # Jenkins UI on localhost:8888
+  -p 50001:50000 \             # Agent communication port
+  -v jenkins_home:/var/jenkins_home \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  --name jenkins-pathpilot \
+  jenkins/jenkins:lts
+
 
         stage('Install Dependencies') {
             steps {
@@ -44,9 +51,18 @@ pipeline {
         }
 
         stage('Deploy Locally') {
+            environment {
+                GROQ_API_KEY = credentials('groq-api-key')
+            }
             steps {
-                sh 'docker run -d -p 5000:5000 --env-file .env --name pathpilot_container ${DOCKERHUB_USERNAME}/pathpilot:latest'
+                sh """
+                docker run -d -p 5000:5000 \\
+                    -e GROQ_API_KEY=$GROQ_API_KEY \\
+                    --name pathpilot_container \\
+                    ${DOCKERHUB_USERNAME}/pathpilot:latest
+                """
             }
         }
+
     }
 }
