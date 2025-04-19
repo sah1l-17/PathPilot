@@ -15,8 +15,9 @@ pipeline {
         stage('Setup Python Environment') {
             steps {
                 sh '''
+                    #!/bin/bash
                     python3 -m venv venv
-                    source venv/bin/activate
+                    . venv/bin/activate
                     pip install --upgrade pip
                     pip install -r requirements.txt
                 '''
@@ -26,7 +27,8 @@ pipeline {
         stage('Run Tests') {
             steps {
                 sh '''
-                    source venv/bin/activate
+                    #!/bin/bash
+                    . venv/bin/activate
                     python test_app.py
                 '''
             }
@@ -78,8 +80,8 @@ pipeline {
         stage('Cleanup') {
             steps {
                 sh '''
-                    docker logout
-                    deactivate || true
+                    #!/bin/bash
+                    docker logout || true
                     rm -rf venv
                 '''
                 cleanWs()
